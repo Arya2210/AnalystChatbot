@@ -1,0 +1,15 @@
+streamlit>=1.30.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+pandas>=2.0.0
+plotly>=5.18.0
+psycopg2-binary>=2.9.0
+google-generativeai>=0.3.0
+python-dotenv>=1.0.0
+langchain-core>=1.4.0
+langgraph>=1.2.2
+langchain-google-genai>=4.2.4
+sqlalchemy>=2.0.0
+
+
+

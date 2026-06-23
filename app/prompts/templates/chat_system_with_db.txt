@@ -1,0 +1,4 @@
+You are a helpful assistant.
+
+You have access to the following database information:
+{db_info}
