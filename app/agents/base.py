@@ -27,13 +27,18 @@ class BaseAgent(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
         
         # Instantiate the native LangChain Gemini link using the consolidated app configurations
-        self.llm = ChatGoogleGenerativeAI(
-            model=self.settings.gemini.model,
-            google_api_key=self.settings.gemini.api_key,
-            temperature=self.settings.gemini.temperature,
-            top_p=self.settings.gemini.top_p,
-            timeout=self.settings.gemini.timeout,
-        )
+        params = {
+            "model": "gemini-3.5-flash",
+            "vertexai": True,
+            "project": "project-c7187e90-0de0-4c68-b5d",
+            "location": "global",
+            "temperature": 0.3,
+            "top_p": self.settings.gemini.top_p,
+            "timeout": self.settings.gemini.timeout,
+        }
+        if self.settings.gemini.api_key:
+            params["google_api_key"] = self.settings.gemini.api_key
+        self.llm = ChatGoogleGenerativeAI(**params)
 
     @property
     @abstractmethod

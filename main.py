@@ -18,14 +18,14 @@ dotenv.load_dotenv()
 
 def verify_environment():
     """Verify essential ecosystem keys are set up before spinning up nodes."""
-    print("📋 Verifying LangChain & Gemini Environment Configurations...")
+    print("[Environment] Verifying LangChain & Gemini Environment Configurations...")
     
     # 1. Gemini / Google Gen AI Verification
     # LangChain's ChatGoogleGenerativeAI typically uses GEMINI_API_KEY or GOOGLE_API_KEY
     gemini_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     if not gemini_key:
-        print("⚠️  Warning: GEMINI_API_KEY / GOOGLE_API_KEY environment variable is not set.")
-        print("👉 Make sure to declare it in your local environment or '.env' file.")
+        print("[Warning] GEMINI_API_KEY / GOOGLE_API_KEY environment variable is not set.")
+        print("Make sure to declare it in your local environment or '.env' file.")
         print("   Example: export GEMINI_API_KEY='AIzaSy...'")
         print("---")
 
@@ -39,7 +39,7 @@ def verify_environment():
 
 def main():
     """Launch the Streamlit web interface."""
-    print("🚀 Launching Streamlit Web Interface for Gemini-LangGraph Agent")
+    print("[Launcher] Launching Streamlit Web Interface for Gemini-LangGraph Agent")
 
     # Perform runtime ecosystem sanity checks
     verify_environment()
@@ -57,7 +57,7 @@ def main():
 
     # Check if the file exists
     if not os.path.exists(wrapper_path):
-        print(f"❌ Error: Could not find Streamlit entry-point file at {wrapper_path}")
+        print(f"[Error] Could not find Streamlit entry-point file at {wrapper_path}")
         sys.exit(1)
 
     try:
@@ -71,13 +71,24 @@ def main():
         else:
             env["PYTHONPATH"] = script_dir
 
-        print(f"📌 Setting PYTHONPATH to target: {script_dir}")
-        print("🤖 Running Graph network pipeline...")
+        print(f"[PYTHONPATH] Setting PYTHONPATH to target: {script_dir}")
+        print("[Agent] Running Graph network pipeline...")
+
+        # Resolve streamlit executable path relative to sys.executable (useful in virtual environments)
+        python_dir = os.path.dirname(sys.executable)
+        streamlit_executable = "streamlit"
+        for ext in ["", ".exe"]:
+            candidate = os.path.join(python_dir, "streamlit" + ext)
+            if os.path.exists(candidate):
+                streamlit_executable = candidate
+                break
+
+        print(f"[Launcher] Using Streamlit executable: {streamlit_executable}")
 
         # Run streamleted client UI
         subprocess.run(
             [
-                "streamlit",
+                streamlit_executable,
                 "run",
                 wrapper_path,
                 "--server.headless",
@@ -87,11 +98,11 @@ def main():
             env=env,
         )
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error: Failed to execute LangGraph Streamlit application: {e}")
+        print(f"[Error] Failed to execute LangGraph Streamlit application: {e}")
         sys.exit(1)
     except FileNotFoundError:
-        print("❌ Error: 'streamlit' executable not found in your active environment path.")
-        print("💡 Ensure dependencies are ready: pip install streamlit langchain-google-genai langgraph")
+        print("[Error] 'streamlit' executable not found in your active environment path.")
+        print("[Tip] Ensure dependencies are ready: pip install streamlit langchain-google-genai langgraph")
         sys.exit(1)
 
 

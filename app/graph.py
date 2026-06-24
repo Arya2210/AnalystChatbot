@@ -20,19 +20,35 @@ from app.agents.chat import ChatAgent
 # 1. Conditional Routing Logic
 # ==========================================
 
-def route_decision_condition(state: GraphState) -> Literal["text2sql_agent", "visualization_agent", "chat_agent"]:
+def route_decision_condition(state: GraphState) -> Literal["text2sql_agent", "chat_agent"]:
     """
     Inspects the state modifications made by the RouterAgent 
     and determines the next node execution path.
     """
     destination = state.get("route_destination")
     
-    if destination == QueryType.TEXT2SQL.value:
+    if destination in (QueryType.TEXT2SQL.value, QueryType.VISUALIZATION.value):
         return "text2sql_agent"
-    elif destination == QueryType.VISUALIZATION.value:
-        return "visualization_agent"
     else:
         return "chat_agent"
+
+
+def after_text2sql_routing(state: GraphState) -> Literal["visualization_agent", "__end__"]:
+    """
+    Determines if a query that went through text2sql_agent should proceed 
+    to visualization_agent if the user requested a chart and the data was retrieved.
+    """
+    destination = state.get("route_destination")
+    final_resp = state.get("final_response")
+    
+    if (
+        destination == QueryType.VISUALIZATION.value
+        and final_resp
+        and getattr(final_resp, "success", False)
+        and not getattr(final_resp, "needs_clarification", False)
+    ):
+        return "visualization_agent"
+    return END
 
 
 # ==========================================
@@ -48,7 +64,7 @@ def create_agent_workflow() -> Any:
 
     # Instantiate Agent Nodes
     router = RouterAgent()
-    text2sql = Text2SQLAgent()
+    text2sql = Text2SQLAgent().build_graph()
     visualization = VisualizationAgent()
     chat = ChatAgent()
 
@@ -67,13 +83,19 @@ def create_agent_workflow() -> Any:
         route_decision_condition,
         {
             "text2sql_agent": "text2sql_agent",
-            "visualization_agent": "visualization_agent",
             "chat_agent": "chat_agent"
         }
     )
 
-    # Define Execution Terminal Paths (All roads lead back to the client response)
-    workflow.add_edge("text2sql_agent", END)
+    # Define Execution Paths
+    workflow.add_conditional_edges(
+        "text2sql_agent",
+        after_text2sql_routing,
+        {
+            "visualization_agent": "visualization_agent",
+            END: END
+        }
+    )
     workflow.add_edge("visualization_agent", END)
     workflow.add_edge("chat_agent", END)
 
